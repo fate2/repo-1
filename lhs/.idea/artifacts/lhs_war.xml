@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="lhs:war">
+    <output-path>$PROJECT_DIR$/target</output-path>
+    <root id="archive" name="{project.artifactId}_{project.artifactId}_{project.version}_2017-08-03 12:30:30.war">
+      <element id="artifact" artifact-name="lhs:war exploded" />
+    </root>
+  </artifact>
+</component>

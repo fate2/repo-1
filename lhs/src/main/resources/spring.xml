@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+            http://www.springframework.org/schema/mvc
+            http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+            http://www.springframework.org/schema/context
+            http://www.springframework.org/schema/context/spring-context-3.0.xsd
+            http://www.springframework.org/schema/aop
+            http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+            http://www.springframework.org/schema/tx
+            http://www.springframework.org/schema/tx/spring-tx-3.0.xsd ">
+
+    <!-- 扫描service、dao组件 -->
+    <context:component-scan base-package="com.lingstep" />
+    <!-- 读取数据库配置文件 -->
+    <context:property-placeholder location="classpath:application.properties" />
+
+    <!-- 数据源c3p0 -->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+        <property name="driverClass" value="${pro.jdbc.driver}" />
+        <property name="jdbcUrl" value="${pro.jdbc.url}" />
+        <property name="user" value="${pro.jdbc.username}" />
+        <property name="password" value="${pro.jdbc.password}" />
+        <!-- 连接池初始化时创建的连接数 -->
+        <property name="initialPoolSize" value="${c3p0.pool.size.ini}" />
+        <!-- 连接池中拥有的最大连接数 -->
+        <property name="maxPoolSize" value="${c3p0.pool.size.max}" />
+        <!-- 连接池中拥有的最小连接数 -->
+        <property name="minPoolSize" value="${c3p0.pool.size.min}" />
+        <!-- 连接池在无空闲连接可用时一次性创建的新数据库连接数 -->
+        <property name="acquireIncrement" value="${c3p0.pool.size.increment}" />
+        <!-- 连接的最大空闲时间 -->
+        <property name="maxIdleTime" value="${max.idle.time}" />
+        <!-- 连接池为数据源单个Connection缓存的PreparedStatement数 -->
+        <property name="maxStatementsPerConnection" value="${max.statements.perConnection}" />
+        <!-- 定义在从数据库获取新连接失败后重复尝试的次数  -->
+        <property name="acquireRetryAttempts" value="${acquire.retry.attempts}" />
+        <!-- 下列参数对性能有影响  -->
+        <property name="testConnectionOnCheckout" value="${test.connection.onCheckout}" />
+    </bean>
+
+
+    <!-- sessionFactory 将spring和mybatis整合 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <!--<property name="configLocation" value="classpath:spring-mybatis.xml" />-->
+        <property name="mapperLocations" value="classpath:mybatis/**/*Mapper.xml" />
+    </bean>
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com,yingjun.test.dao" />
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+    </bean>
+
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+    <!-- 使用annotation定义事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"  mode="aspectj" />
+
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
+    <bean class="org.springframework.transaction.aspectj.AnnotationTransactionAspect"   factory-method="aspectOf" >
+        <property name="transactionManager" ref="transactionManager"/>
+    </bean>
+    <!--
+    <aop:config>
+        <aop:pointcut id="transactionPointcut" expression="execution(* com.yingjun.test.service..*Impl.*(..))" />
+        <aop:advisor pointcut-ref="transactionPointcut" advice-ref="transactionAdvice" />
+    </aop:config>
+    -->
+</beans>

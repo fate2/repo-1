@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd">
+
+    <description>Shiro Security Setting</description>
+
+    <!-- Shiro's main business-tier object for web-enabled applications -->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="realm" ref="shiroDbRealm" />
+        <property name="cacheManager" ref="shiroEhcacheManager" />
+        <property name="sessionManager" ref="sessionManager"/>
+    </bean>
+
+    <!-- 項目自定义的Realm -->
+    <bean id="shiroDbRealm" class="com.lingstep.lhs.sys.authentication.realm.ShiroDbRealm" />
+
+    <!-- Shiro Filter -->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager" />
+        <!-- 用于调用Controller -->
+        <property name="loginUrl" value="/login" />
+        <property name="successUrl" value="/" />
+        <!-- 自己实现的formAuthcFilter，加入key type-->
+        <property name="filters">
+            <util:map>
+                <entry key="authc">
+                    <bean class="com.genertech.mems.sys.authentication.filter.CustomFormAuthenticationFilter" />
+                </entry>
+            </util:map>
+        </property>
+
+        <property name="filterChainDefinitions">
+            <value>
+                /login = authc
+                /logout = logout
+                /static/** = anon
+                /** = user
+            </value>
+        </property>
+    </bean>
+
+    <!-- 用户授权信息Cache, 采用EhCache -->
+    <bean id="shiroEhcacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+        <property name="cacheManagerConfigFile" value="classpath:security/ehcache-shiro.xml" />
+    </bean>
+    
+     <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+        <!-- 设置全局会话超时时间，默认30分钟(1800000) -->
+        <property name="globalSessionTimeout" value="7200000"/>
+        <!-- 是否在会话过期后会调用SessionDAO的delete方法删除会话 默认true-->
+        <property name="deleteInvalidSessions" value="false"/>
+        <!-- 是否开启会话验证器任务 默认true -->
+        <property name="sessionValidationSchedulerEnabled" value="false"/>
+        <!-- 会话验证器调度时间 -->
+        <property name="sessionValidationInterval" value="3600000"/>
+        <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="sessionDAO" ref="sessionDao"/>
+        <!-- 默认JSESSIONID，同tomcat/jetty在cookie中缓存标识相同，修改用于防止访问404页面时，容器生成的标识把shiro的覆盖掉 -->
+        <property name="sessionIdCookie">
+            <bean class="org.apache.shiro.web.servlet.SimpleCookie">
+                <constructor-arg name="name" value="mcs_shiro_session_id"/>
+            </bean>
+        </property>
+        <property name="sessionListeners">
+            <list>
+                <bean class="com.genertech.mems.sys.authentication.component.ShiroSessionListener"/>
+            </list>
+        </property>
+    </bean>
+    
+     <!-- 自定义Session工厂方法 返回会标识是否修改主要字段的自定义Session-->
+    <bean id="sessionFactory" class="com.genertech.mems.sys.authentication.component.ShiroSessionFactory"/>
+
+    <bean id="shiroSessionService" class="com.genertech.mems.sys.authentication.service.ShiroSessionService"/>
+
+    <!-- 可缓存Dao，操作自定义Session,添加标识位，减少doUpdate方法中Redis的连接次数来减轻网络压力 -->
+    <bean id="sessionDao" class="com.genertech.mems.sys.authentication.dao.ShiroSessionDao">
+        <property name="prefix" value="mcs.shiro.session_"/>
+        <!-- 注意中央缓存有效时间要比本地缓存有效时间长-->
+        <property name="seconds" value="1800"/>
+         <!-- 特殊配置 只用于没有Redis时 将Session放到EhCache中 -->
+        <property name="onlyEhCache" value="false"/>
+    </bean>
+    
+
+    <!-- 保证实现了Shiro内部lifecycle函数的bean执行 -->
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
+
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securityManager" />
+    </bean>
+</beans>
