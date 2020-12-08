@@ -23,7 +23,7 @@
     <!-- sitemesh -->
     <sitemesh.version>2.4.2</sitemesh.version>
     <!-- shiro -->
-    <shiro.version>1.2.2</shiro.version>
+    <shiro.version>1.7.0</shiro.version>
     <commons-lang3.version>3.2.1</commons-lang3.version>
     <commons-codec.version>1.9</commons-codec.version>
     <dozer.version>5.4.0</dozer.version>
