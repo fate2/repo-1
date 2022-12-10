@@ -15,7 +15,7 @@
     <!-- JDK版本 -->
     <jdk.version>1.7</jdk.version>
     <!-- spring -->
-    <spring.version>4.0.2.RELEASE</spring.version>
+    <spring.version>6.0.0</spring.version>
     <springframework-ws-version>2.2.0.RELEASE</springframework-ws-version>
     <aspectj.version>1.7.4</aspectj.version>
     <mybatis.version>3.2.5</mybatis.version>
